@@ -3,24 +3,38 @@ The Flask app.
 """
 
 
-from flask import abort, json, render_template, request
+import sqlite3
+
+from datetime import datetime
+from flask import abort, render_template, request
 from flask import Flask, Response
 from queue import Queue
 
 
-# Path to the file that will persist the most recent calculations
-CALC_FILE_PATH = "calculations.json"
-# The number of most recent calculations to persist
+# The number of most recent calculations to load
 CALC_LIMIT = 10
 # The maximum size (in bytes) of incoming calculations that will be accepted
 # (for security purposes)
 CALC_MAX_SIZE = 1024;
+# The SQLite database file used to persist calculations
+DB_FILE = 'calculations.db'
 
 
 # Initialization of the Flask app
 app = Flask(__name__)
 # Queues used to send new calculations to clients
 queues = []
+
+
+# Create the calculations table if it doesn't already exist
+conn = sqlite3.connect(DB_FILE)
+cursor = conn.cursor()
+cursor.execute('''CREATE TABLE IF NOT EXISTS calculations (
+    calculation text,
+    timestamp text
+);''')
+conn.commit()
+conn.close()
 
 
 # Run the app
@@ -33,10 +47,13 @@ def index():
     """
     Get the calculator webpage.
     """
-    try:
-        calculations = json.load(open(CALC_FILE_PATH, 'r'))
-    except FileNotFoundError:
-        calculations = []
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT calculation FROM calculations ORDER BY timestamp DESC LIMIT ?',
+        (CALC_LIMIT,))
+    calculations = [row[0] for row in cursor.fetchall()]
+    conn.close()
 
     return render_template('calculator.html', calculations=calculations)
 
@@ -56,21 +73,13 @@ def calculations():
         abort(400)
 
     # Save the new calculation
-    try:
-        with open(CALC_FILE_PATH, 'r+') as calc_file:
-            # Load one less than the limit since we'll be replacing the oldest
-            # calculation
-            calculations = json.load(calc_file)[:CALC_LIMIT-1]
-            calculations.insert(0, new_calculation)
-            # Clear the file before writing the calculations
-            calc_file.seek(0)
-            calc_file.truncate()
-            # Write the calculations
-            json.dump(calculations, calc_file)
-    except FileNotFoundError:
-        # If the file didn't already exist, initialize it with this calculation
-        with open(CALC_FILE_PATH, 'w') as calc_file:
-            json.dump([new_calculation], calc_file)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT INTO calculations VALUES (?, ?)',
+        (new_calculation, datetime.now()))
+    conn.commit()
+    conn.close()
 
     # Notify any active clients of the new calculation
     for q in queues:

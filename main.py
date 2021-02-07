@@ -100,7 +100,11 @@ def calculations_stream():
     global queues
     queues.append(q)
 
-    return Response(event_stream(q), mimetype="text/event-stream")
+    response = Response(event_stream(q), mimetype="text/event-stream")
+    # This head allows SSE to work with Google Cloud Run
+    response.headers['X-Accel-Buffering'] = 'no'
+
+    return response
 
 def event_stream(q):
     """

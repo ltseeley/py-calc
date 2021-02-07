@@ -4,7 +4,8 @@ The Flask app.
 
 
 from flask import abort, json, render_template, request
-from flask import Flask
+from flask import Flask, Response
+from queue import Queue
 
 
 # Path to the file that will persist the most recent calculations
@@ -18,6 +19,8 @@ CALC_MAX_SIZE = 1024;
 
 # Initialization of the Flask app
 app = Flask(__name__)
+# Queues used to send new calculations to clients
+queues = []
 
 
 # Run the app
@@ -69,4 +72,30 @@ def calculations():
         with open(CALC_FILE_PATH, 'w') as calc_file:
             json.dump([new_calculation], calc_file)
 
+    # Notify any active clients of the new calculation
+    for q in queues:
+        q.put(new_calculation)
+
     return 'Calculation added'
+
+
+@app.route('/calculations/stream')
+def calculations_stream():
+    """
+    Subscribe to a stream of server-sent events (SSE) that notify the client of
+    new calculations.
+    """
+    # Create a new queue and add it to the list of queues to be notified of new
+    # calculations
+    q = Queue()
+    global queues
+    queues.append(q)
+
+    return Response(event_stream(q), mimetype="text/event-stream")
+
+def event_stream(q):
+    """
+    The event generator for the SSE endpoint
+    """
+    while True:
+        yield 'data: {}\n\n'.format(q.get())

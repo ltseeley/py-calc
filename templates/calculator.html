@@ -1,0 +1,52 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Calculator</title>
+  <meta name="description" content="Calculator">
+  <meta name="author" content="Logan Seeley">
+
+  <link rel="stylesheet" href="/static/bootstrap.min.css">
+  <script type="text/javascript" src="/static/bootstrap.bundle.min.js"></script>
+  <script type="text/javascript" src="/static/jquery.js"></script>
+  <script type="text/javascript" src="/static/math.js"></script>
+  <script type="text/javascript" src="/static/submit.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <h1>Logan Seeley's Web Calculator</h1>
+        <p>
+            This calculator can be used to evaluate a variety of mathematical
+            formulas. Simply type a formula in the text area below and click
+            "Submit"! The result will be displayed under "Latest caluclations".
+        </p>
+        <div class="row">
+            <div class="column">
+                <form id="formula-form">
+                    <label for="formula" class="form-label">
+                        <b>Enter a mathematical formula to be evaluated</b>
+                    </label>
+                    <br>
+                    <textarea id="formula" class="form-control" rows="3" required=""></textarea>
+                    <br>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <div id="submission-alert" class="alert alert-danger" role="alert"></div>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="column">
+                <h4>Latest calculations</h4>
+                <div id="calculations">
+                    {% for calculation in calculations %}
+                        <p>{{ calculation }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

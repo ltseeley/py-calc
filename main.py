@@ -3,7 +3,7 @@ The Flask app.
 """
 
 
-from flask import abort, json, request
+from flask import abort, json, render_template, request
 from flask import Flask
 
 
@@ -23,6 +23,19 @@ app = Flask(__name__)
 # Run the app
 if __name__ == '__main__':
     app.run(threaded=True)
+
+
+@app.route('/')
+def index():
+    """
+    Get the calculator webpage.
+    """
+    try:
+        calculations = json.load(open(CALC_FILE_PATH, 'r'))
+    except FileNotFoundError:
+        calculations = []
+
+    return render_template('calculator.html', calculations=calculations)
 
 
 @app.route('/calculations', methods=['POST'])

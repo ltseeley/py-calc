@@ -1,0 +1,19 @@
+h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+#calculations {
+    background-color: lightgray;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+#submission-alert {
+    display: none; /* Hidden by default */
+    margin: 20px 0;
+}
+
+.container {
+    margin: 20px;
+}
